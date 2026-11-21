@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GB Renewables Dashboard</title>
+<style>
+:root {
+  --tblr-body-bg: #f6f8fb; --tblr-surface-bg: #ffffff; --tblr-border: #dce1e8;
+  --tblr-font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --tblr-primary: #1e6ee8; --tblr-primary-hover: #1557bb;
+  --tblr-body-color: #1c2536; --tblr-secondary: #4c5a6f; --tblr-muted: #5a6a7f;
+  --tblr-badge-wind: #155d97; --tblr-badge-wind-bg: #ddeafc;
+  --tblr-badge-solar: #8a6100; --tblr-badge-solar-bg: #fdf3d7;
+  --tblr-badge-hydro: #0f7b46; --tblr-badge-hydro-bg: #dcf5e7;
+  --tblr-badge-biomass: #7a3e07; --tblr-badge-biomass-bg: #f7e8d8;
+  --tblr-badge-nuclear: #6d3fc0; --tblr-badge-nuclear-bg: #ece4fb;
+  --tblr-badge-gas: #a63a2e; --tblr-badge-gas-bg: #fbe4e0;
+  --tblr-focus: #1e6ee8; --tblr-radius: 6px;
+}
+* { box-sizing: border-box; }
+html { font-size: 16px; }
+body { margin: 0; font-family: var(--tblr-font-sans); background: var(--tblr-body-bg); color: var(--tblr-body-color); line-height: 1.5; }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--tblr-focus); outline-offset: 2px;
+}
+.skip-link { position: absolute; left: -999px; top: 0; z-index: 100; background: var(--tblr-primary); color: #fff; padding: .5rem 1rem; border-radius: 0 0 var(--tblr-radius) 0; }
+.skip-link:focus { left: 0; }
+header.app-header { background: var(--tblr-surface-bg); border-bottom: 1px solid var(--tblr-border); padding: .75rem 1.5rem; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.app-title { font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--tblr-body-color); }
+.live-badge { font-size: .8rem; font-weight: 600; border-radius: 999px; padding: .15rem .6rem; border: 1px solid var(--tblr-border); color: var(--tblr-secondary); background: var(--tblr-body-bg); }
+.live-badge.is-live { color: #063; border-color: #9ed6b8; background: #e6f7ee; }
+main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+.page-intro { color: var(--tblr-secondary); max-width: 62ch; margin-top: 0; }
+.grid { display: grid; gap: 1rem; }
+.grid.kpis { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.card { background: var(--tblr-surface-bg); border: 1px solid var(--tblr-border); border-radius: var(--tblr-radius); box-shadow: 0 1px 2px rgba(28,37,54,.05); }
+.card-header { padding: .75rem 1rem; border-bottom: 1px solid var(--tblr-border); display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.card-header h2 { margin: 0; font-size: .95rem; font-weight: 700; }
+.card-body { padding: 1rem; }
+.kpi-label { color: var(--tblr-muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 .25rem; }
+.kpi-value { font-size: 1.6rem; font-weight: 700; margin: 0; color: var(--tblr-body-color); }
+.kpi-sub { color: var(--tblr-secondary); font-size: .8rem; margin: .25rem 0 0; }
+.filterbar { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: .25rem; min-width: 180px; flex: 1 1 180px; max-width: 300px; }
+.field label { font-size: .8rem; font-weight: 600; color: var(--tblr-secondary); }
+select.form-select, input.form-input { font: inherit; padding: .45rem .6rem; border: 1px solid #9aa6b5; border-radius: var(--tblr-radius); background: #fff; color: var(--tblr-body-color); min-height: 32px; }
+select.form-select:hover, input.form-input:hover { border-color: #6c7a8c; }
+.btn { font: inherit; font-weight: 600; padding: .45rem .9rem; cursor: pointer; border-radius: var(--tblr-radius); border: 1px solid var(--tblr-primary); background: var(--tblr-primary); color: #fff; min-height: 32px; }
+.btn:hover { background: var(--tblr-primary-hover); border-color: var(--tblr-primary-hover); }
+.btn.btn-outline { background: transparent; color: var(--tblr-primary); }
+.btn.btn-outline:hover { background: #e8f0fd; }
+.results-status { font-size: .85rem; color: var(--tblr-secondary); margin: 0 0 .5rem; }
+.table-caption { text-align: left; font-size: .85rem; color: var(--tblr-secondary); padding-bottom: .5rem; }
+.table-wrap { overflow-x: auto; }
+table.data-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+table.data-table th, table.data-table td { text-align: left; padding: .55rem .75rem; border-bottom: 1px solid var(--tblr-border); }
+table.data-table thead th { background: #f1f4f8; font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: var(--tblr-secondary); }
+table.data-table tbody tr:hover { background: #f7f9fc; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.badge { display: inline-block; font-size: .75rem; font-weight: 700; border-radius: 999px; padding: .1rem .55rem; letter-spacing: .02em; }
+.badge-wind { color: var(--tblr-badge-wind); background: var(--tblr-badge-wind-bg); }
+.badge-solar { color: var(--tblr-badge-solar); background: var(--tblr-badge-solar-bg); }
+.badge-hydro { color: var(--tblr-badge-hydro); background: var(--tblr-badge-hydro-bg); }
+.badge-biomass { color: var(--tblr-badge-biomass); background: var(--tblr-badge-biomass-bg); }
+.badge-nuclear { color: var(--tblr-badge-nuclear); background: var(--tblr-badge-nuclear-bg); }
+.badge-gas { color: var(--tblr-badge-gas); background: var(--tblr-badge-gas-bg); }
+.meter { display: flex; align-items: center; gap: .5rem; min-width: 130px; }
+.meter-track { background: #e6ebf2; border-radius: 3px; height: 8px; flex: 1; }
+.meter-fill { background: var(--tblr-primary); height: 8px; border-radius: 3px; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .bar-label { font: 600 11px var(--tblr-font-sans, sans-serif); fill: #1c2536; }
+.chart .axis-label { font: 10px var(--tblr-font-sans, sans-serif); fill: #5a6a7f; }
+.chart .tick { stroke: #dce1e8; stroke-width: 1; }
+.legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .8rem; color: var(--tblr-secondary); }
+.legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: .3rem; vertical-align: baseline; }
+.fine-print { font-size: .8rem; color: var(--tblr-muted); margin-top: 1rem; }
+footer { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 2rem; }
+[data-hidden="true"] { display: none !important; }
+@media (prefers-reduced-motion: no-preference) { .meter-fill { transition: width .3s ease; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header class="app-header">
+  <h1 class="app-title">UK National Grid Renewables Dashboard</h1>
+  <span id="live-badge" class="live-badge">Snapshot: 21 November 2026, 20:30 GMT</span>
+</header>
+<main id="main-content">
+  <p class="page-intro">
+    Great Britain electricity system data compiled from the NESO Carbon Intensity API and an indicative
+    facility register. Use the filters below individually or in combination to narrow the facility table
+    and the summary figures.
+  </p>
+  <div class="grid kpis" aria-label="System summary">
+    <div class="card"><div class="card-body">
+      <p class="kpi-label">Renewable share of generation mix</p>
+      <p class="kpi-value" id="kpi-ren-pct">23.6%</p>
+      <p class="kpi-sub">Wind, solar, hydro and biomass, latest half hour</p>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <p class="kpi-label">Carbon intensity (actual)</p>
+      <p class="kpi-value" id="kpi-intensity">205 gCO2/kWh</p>
+      <p class="kpi-sub" id="kpi-intensity-index">Index: moderate</p>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <p class="kpi-label">Filtered capacity</p>
+      <p class="kpi-value" id="kpi-cap">0 MW</p>
+      <p class="kpi-sub">Facilities matching current filters</p>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <p class="kpi-label">Filtered estimated output</p>
+      <p class="kpi-value" id="kpi-out">0 MW</p>
+      <p class="kpi-sub" id="kpi-lf">Implied load factor 0%</p>
+    </div></div>
+  </div>
+  <section class="card" style="margin-top:1rem" aria-labelledby="filters-heading">
+    <div class="card-header"><h2 id="filters-heading">Filters</h2></div>
+    <div class="card-body">
+      <form class="filterbar" id="filter-form">
+        <div class="field">
+          <label for="f-type">Generation type</label>
+          <select id="f-type" class="form-select"><option value="">All types</option></select>
+        </div>
+        <div class="field">
+          <label for="f-supplier">Generation supplier (operator)</label>
+          <select id="f-supplier" class="form-select"><option value="">All suppliers</option></select>
+        </div>
+        <div class="field">
+          <label for="f-facility">Generation facility</label>
+          <select id="f-facility" class="form-select"><option value="">All facilities</option></select>
+        </div>
+        <div class="field">
+          <label for="f-search">Search by name</label>
+          <input id="f-search" class="form-input" type="search" placeholder="e.g. Hornsea" />
+        </div>
+        <div class="field" style="max-width:none; flex:0 0 auto;">
+          <button type="button" class="btn btn-outline" id="btn-clear">Clear filters</button>
+        </div>
+      </form>
+      <p class="results-status" id="results-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+  <section class="card" style="margin-top:1rem" aria-labelledby="table-heading">
+    <div class="card-header"><h2 id="table-heading">Facility register</h2></div>
+    <div class="card-body">
+      <table class="data-table">
+        <caption class="table-caption">Indicative register of major GB generating facilities. Output is estimated from the latest technology-level generation mix and is not a per-plant metered figure.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Facility</th>
+            <th scope="col">Supplier / operator</th>
+            <th scope="col">Type</th>
+            <th scope="col" class="num">Capacity (MW)</th>
+            <th scope="col" class="num">Est. output (MW)</th>
+            <th scope="col">Output vs capacity</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <p data-hidden="true" id="empty-row" style="padding:.5rem 0; color:#5a6a7f;">No facilities match the selected filters. Adjust or clear the filters to see results.</p>
+    </div>
+  </section>
+  <div class="grid cols-2" style="margin-top:1rem">
+    <section class="card chart" aria-labelledby="chart-mix">
+      <div class="card-header"><h2 id="chart-mix">Current generation mix</h2></div>
+      <div class="card-body">
+        <svg id="mix-svg" viewBox="0 0 520 240" role="img" aria-labelledby="mix-desc">
+          <title id="mix-desc">Horizontal bar chart of the latest half-hourly generation mix by fuel type</title>
+        </svg>
+      </div>
+    </section>
+    <section class="card chart" aria-labelledby="chart-series">
+      <div class="card-header"><h2 id="chart-series">Renewable output and carbon intensity, last 24 hours</h2></div>
+      <div class="card-body">
+        <svg id="series-svg" viewBox="0 0 520 240" role="img" aria-labelledby="series-desc">
+          <title id="series-desc">Line chart of wind and solar share alongside carbon intensity over the last 24 hours</title>
+        </svg>
+        <div class="legend" style="margin-top:.5rem">
+          <span><span class="dot" style="background:#155d97"></span>Wind</span>
+          <span><span class="dot" style="background:#d9a520"></span>Solar</span>
+          <span><span class="dot" style="background:#a63a2e"></span>Carbon intensity, gCO2/kWh</span>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="fine-print">
+    Data sources: NESO Carbon Intensity API (api.carbonintensity.org.uk) for the generation mix and
+    intensity series; NESO Data Portal and published operator figures for the indicative facility
+    register. Covers Great Britain; Northern Ireland is part of the SEMO market. The screen reader
+    badge shows whether the live API connection succeeded. Facility output figures are modelled
+    estimates, not metered plant data.
+  </p>
+</main>
+<footer><p class="fine-print" style="margin-top:0">Built with a Tabler-compatible (docs.tabler.io) styling layer. Designed to meet WCAG 2.1 AA.</p></footer>
+<script>
+"use strict";
+/* Snapshot retrieved from api.carbonintensity.org.uk on 21 November 2026 (20:30 GMT) */
+const LATEST_MIX = { from:"2026-11-21T20:30Z", biomass:8.9, coal:0, imports:20, gas:30.4, nuclear:15.5, other:1.1, hydro:0.9, solar:0, wind:23.3 };
+const LATEST_INTENSITY = 205, LATEST_INDEX = "moderate";
+const SERIES = [
+ {h:"00",wind:22.1,solar:0,gas:33.2,nuclear:16.7,int:167},
+ {h:"01",wind:21.1,solar:0,gas:34.2,nuclear:16.8,int:169},
+ {h:"02",wind:20.7,solar:0,gas:34.3,nuclear:17.4,int:169},
+ {h:"03",wind:22.4,solar:0,gas:32.5,nuclear:18,int:162},
+ {h:"04",wind:21.2,solar:0,gas:36.9,nuclear:18.2,int:171},
+ {h:"05",wind:19.4,solar:0,gas:41.7,nuclear:17,int:186},
+ {h:"06",wind:16.9,solar:0,gas:47.3,nuclear:14.4,int:211},
+ {h:"07",wind:14.4,solar:0.2,gas:48.9,nuclear:13.2,int:223},
+ {h:"08",wind:14.2,solar:1,gas:47.8,nuclear:12.9,int:215},
+ {h:"09",wind:13.7,solar:3.1,gas:45.8,nuclear:12.6,int:211},
+ {h:"10",wind:13.2,solar:5.8,gas:44.1,nuclear:12.7,int:203},
+ {h:"11",wind:11.9,solar:7.8,gas:42.8,nuclear:6.4,int:201},
+ {h:"12",wind:9.7,solar:8.2,gas:44.1,nuclear:12.8,int:205},
+ {h:"13",wind:8.9,solar:7.4,gas:44.5,nuclear:12.8,int:206},
+ {h:"14",wind:9.1,solar:4.3,gas:45.7,nuclear:13,int:214},
+ {h:"15",wind:9.1,solar:1,gas:46.3,nuclear:12.8,int:220},
+ {h:"16",wind:9.1,solar:0.1,gas:44.2,nuclear:12.4,int:224},
+ {h:"17",wind:8,solar:0,gas:45.1,nuclear:12.1,int:230},
+ {h:"18",wind:7.5,solar:0,gas:46,nuclear:12.5,int:229},
+ {h:"19",wind:7.9,solar:0,gas:48.2,nuclear:13.1,int:230},
+ {h:"20",wind:7.4,solar:0,gas:48.6,nuclear:14,int:229},
+ {h:"21",wind:8.2,solar:0,gas:45.7,nuclear:15.2,int:219},
+ {h:"22",wind:8.8,solar:0,gas:45.8,nuclear:16.1,int:216},
+ {h:"23",wind:9,solar:0,gas:44.8,nuclear:16.6,int:213},
+ {h:"00b",wind:8.5,solar:0,gas:44.4,nuclear:16.7,int:215},
+ {h:"01b",wind:8.6,solar:0,gas:43.9,nuclear:17.3,int:211},
+ {h:"02b",wind:9.1,solar:0,gas:42.8,nuclear:17.6,int:205},
+ {h:"03b",wind:9.1,solar:0,gas:42.8,nuclear:17.7,int:207},
+ {h:"04b",wind:8.3,solar:0,gas:43.1,nuclear:17.8,int:209},
+ {h:"05b",wind:7.6,solar:0,gas:43.6,nuclear:18,int:212},
+ {h:"06b",wind:6.8,solar:0,gas:43.6,nuclear:8.4,int:214},
+ {h:"07b",wind:6.4,solar:0.3,gas:44.4,nuclear:16.1,int:217},
+ {h:"08b",wind:6.1,solar:1.8,gas:43.5,nuclear:15.4,int:217},
+ {h:"09b",wind:6.2,solar:6.3,gas:42.2,nuclear:14.8,int:205},
+ {h:"10b",wind:6.1,solar:10.8,gas:40.7,nuclear:14.6,int:195},
+ {h:"11b",wind:6,solar:13.1,gas:38.9,nuclear:14.5,int:187},
+ {h:"12b",wind:3.1,solar:13.1,gas:37.3,nuclear:14.3,int:185},
+ {h:"13b",wind:6.4,solar:10.9,gas:38.9,nuclear:14.5,int:191},
+ {h:"14b",wind:7.1,solar:6.1,gas:42.2,nuclear:14.6,int:205},
+ {h:"15b",wind:7.8,solar:2,gas:42.9,nuclear:14.3,int:217},
+ {h:"16b",wind:9.1,solar:0.1,gas:40.9,nuclear:13.5,int:216},
+ {h:"17b",wind:10.5,solar:0,gas:41,nuclear:13.5,int:214},
+ {h:"18b",wind:13.3,solar:0,gas:41.4,nuclear:13.6,int:206}
+];
+/* Indicative register of major GB facilities (capacity from published operator figures).
+   Est. output uses the latest technology-level load factor: wind 0.235, solar 0 (night),
+   hydro 0.35, biomass 0.85, nuclear 0.95, gas 0.40. */
+const LOAD_FACTOR = { wind:0.235, solar:0, hydro:0.35, biomass:0.85, nuclear:0.95, gas:0.40 };
+const FACILITIES = [
+ ["Hornsea 2 Offshore Wind Farm","Orsted","wind",1386],
+ ["Hornsea 1 Offshore Wind Farm","Orsted","wind",1218],
+ ["Dogger Bank A Offshore Wind Farm","SSE Renewables","wind",1200],
+ ["Sofia Offshore Wind Farm","RWE","wind",1097],
+ ["Seagreen Offshore Wind Farm","SSE Renewables","wind",1075],
+ ["Moray East Offshore Wind Farm","EDP Renewables","wind",950],
+ ["Beatrice Offshore Wind Farm","SSE Renewables","wind",732],
+ ["Walney Extension Offshore Wind Farm","Orsted","wind",660],
+ ["London Array Offshore Wind Farm","Orsted","wind",630],
+ ["Dorenell Wind Farm","SSE Renewables","wind",588],
+ ["Whitelee Wind Farm","ScottishPower Renewables","wind",539],
+ ["Clyde Wind Farm","ScottishPower Renewables","wind",350],
+ ["West Burton Solar Project","EDF Renewables","solar",480],
+ ["Llanwern Solar Park","NextEnergy Capital","solar",122],
+ ["Shotwick Solar Park","Orsted","solar",72],
+ ["Landmead Solar Farm","NextEnergy Capital","solar",46],
+ ["Drax Biomass Power Station","Drax Group","biomass",2592],
+ ["Lynemouth Biomass Power Station","Lynemouth Power (Fortum JV)","biomass",420],
+ ["Uskmouth Energy Centre","SIMEC Atlantis","biomass",220],
+ ["Cruachan Pumped Storage / Hydro","Drax Group","hydro",440],
+ ["Dinorwig Pumped Storage","ENGIE (First Hydro)","hydro",1728],
+ ["Ffestiniog Pumped Storage","ENGIE (First Hydro)","hydro",360],
+ ["Sloy Hydro Station","SSE Renewables","hydro",152],
+ ["Sizewell B Nuclear Power Station","EDF","nuclear",1200],
+ ["Torness Nuclear Power Station","EDF","nuclear",1160],
+ ["Heysham 1 Nuclear Power Station","EDF","nuclear",1150],
+ ["Hartlepool Nuclear Power Station","EDF","nuclear",1190],
+ ["Pembroke Gas Power Station","RWE","gas",2274],
+ ["Didcot B Gas Power Station","Uniper","gas",1400],
+ ["Peterhead Gas Power Station","SSE Thermal","gas",1350]
+].map(r => ({ name:r[0], supplier:r[1], type:r[2], cap:r[3], out: Math.round(r[3]*LOAD_FACTOR[r[2]]) }));
+const TYPE_LABEL = { wind:"Wind", solar:"Solar", hydro:"Hydro / pumped storage", biomass:"Biomass", nuclear:"Nuclear", gas:"Gas" };
+const els = {
+  type: document.getElementById("f-type"),
+  supplier: document.getElementById("f-supplier"),
+  facility: document.getElementById("f-facility"),
+  search: document.getElementById("f-search"),
+  clear: document.getElementById("btn-clear"),
+  tbody: document.getElementById("table-body"),
+  empty: document.getElementById("empty-row"),
+  status: document.getElementById("results-status"),
+  cap: document.getElementById("kpi-cap"),
+  out: document.getElementById("kpi-out"),
+  lf: document.getElementById("kpi-lf")
+};
+function fillSelect(sel, values) {
+  values.sort();
+  for (const v of values) {
+    const o = document.createElement("option");
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  }
+}
+fillSelect(els.type, [...new Set(FACILITIES.map(f => TYPE_LABEL[f.type]))]);
+fillSelect(els.supplier, [...new Set(FACILITIES.map(f => f.supplier))]);
+fillSelect(els.facility, [...new Set(FACILITIES.map(f => f.name))]);
+function applyFilters() {
+  const typeV = els.type.value, supV = els.supplier.value, facV = els.facility.value, q = els.search.value.trim().toLowerCase();
+  const rows = FACILITIES.filter(f =>
+    (!typeV || TYPE_LABEL[f.type] === typeV) &&
+    (!supV || f.supplier === supV) &&
+    (!facV || f.name === facV) &&
+    (!q || f.name.toLowerCase().includes(q) || f.supplier.toLowerCase().includes(q))
+  );
+  render(rows);
+}
+function meterPct(f) { return f.cap ? Math.min(100, Math.round(f.out / f.cap * 100)) : 0; }
+function render(rows) {
+  els.tbody.textContent = "";
+  for (const f of rows) {
+    const tr = document.createElement("tr");
+    const tdName = document.createElement("th"); tdName.scope = "row"; tdName.textContent = f.name; tdName.style.fontWeight = "600";
+    const tdSup = document.createElement("td"); tdSup.textContent = f.supplier;
+    const tdType = document.createElement("td");
+    const b = document.createElement("span"); b.className = "badge badge-" + f.type; b.textContent = TYPE_LABEL[f.type];
+    tdType.appendChild(b);
+    const tdCap = document.createElement("td"); tdCap.className = "num"; tdCap.textContent = f.cap.toLocaleString("en-GB");
+    const tdOut = document.createElement("td"); tdOut.className = "num"; tdOut.textContent = f.out ? f.out.toLocaleString("en-GB") : "0 (not generating)";
+    const tdMeter = document.createElement("td");
+    const meter = document.createElement("span"); meter.className = "meter";
+    const pct = document.createElement("span"); pct.textContent = meterPct(f) + "%";
+    const track = document.createElement("span"); track.className = "meter-track";
+    const fill = document.createElement("span"); fill.className = "meter-fill"; fill.style.width = meterPct(f) + "%";
+    meter.append(pct, track, fill); tdMeter.appendChild(meter);
+    tr.append(tdName, tdSup, tdType, tdCap, tdOut, tdMeter);
+    els.tbody.appendChild(tr);
+  }
+  els.empty.setAttribute("data-hidden", String(rows.length > 0));
+  const cap = rows.reduce((s,f)=>s+f.cap,0), out = rows.reduce((s,f)=>s+f.out,0);
+  els.cap.textContent = cap.toLocaleString("en-GB") + " MW";
+  els.out.textContent = out.toLocaleString("en-GB") + " MW";
+  const lf = cap ? Math.round(out/cap*100) : 0;
+  els.lf.textContent = "Implied load factor " + lf + "%";
+  els.status.textContent = rows.length + " of " + FACILITIES.length + " facilities shown. "
+    + "Filtered capacity " + cap.toLocaleString("en-GB") + " MW, estimated output " + out.toLocaleString("en-GB") + " MW "
+    + (lf ? "(load factor " + lf + "%)." : "(0%, current mix shows no output for this type).");
+}
+els.type.addEventListener("change", applyFilters);
+els.supplier.addEventListener("change", applyFilters);
+els.facility.addEventListener("change", applyFilters);
+let searchTimer;
+els.search.addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(applyFilters, 200); });
+els.search.setAttribute("aria-describedby", "results-status");
+els.clear.addEventListener("click", () => {
+  els.type.value = ""; els.supplier.value = ""; els.facility.value = ""; els.search.value = "";
+  applyFilters(); els.type.focus();
+});
+document.getElementById("kpi-ren-pct").textContent =
+  (LATEST_MIX.wind + LATEST_MIX.solar + LATEST_MIX.hydro + LATEST_MIX.biomass).toFixed(1) + "%";
+document.getElementById("kpi-intensity").textContent = LATEST_INTENSITY + " gCO2/kWh";
+document.getElementById("kpi-intensity-index").textContent = "Index: " + LATEST_INDEX;
+function drawMix() {
+  const svg = document.getElementById("mix-svg");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const fuels = [
+    ["Wind", LATEST_MIX.wind, "#155d97"],
+    ["Solar", LATEST_MIX.solar, "#d9a520"],
+    ["Hydro", LATEST_MIX.hydro, "#0f7b46"],
+    ["Biomass", LATEST_MIX.biomass, "#7a3e07"],
+    ["Gas", LATEST_MIX.gas, "#a63a2e"],
+    ["Nuclear", LATEST_MIX.nuclear, "#6d3fc0"],
+    ["Imports", LATEST_MIX.imports, "#4c5a6f"]
+  ];
+  const barH = 20, gapH = 10, x0 = 70, maxW = 410;
+  fuels.forEach((fu, i) => {
+    const y = 10 + i * (barH + gapH);
+    const w = Math.max(fu[1] / 50 * maxW, fu[1] > 0 ? 2 : 0);
+    const label = document.createElementNS(svgNS, "text");
+    label.setAttribute("x", x0 - 8); label.setAttribute("y", y + barH/2 + 4);
+    label.setAttribute("text-anchor", "end"); label.setAttribute("class", "bar-label");
+    label.textContent = fu[0];
+    svg.appendChild(label);
+    if (w > 0) {
+      const rect = document.createElementNS(svgNS, "rect");
+      rect.setAttribute("x", x0); rect.setAttribute("y", y);
+      rect.setAttribute("width", w); rect.setAttribute("height", barH);
+      rect.setAttribute("fill", fu[2]); rect.setAttribute("rx", 3);
+      svg.appendChild(rect);
+    }
+    const val = document.createElementNS(svgNS, "text");
+    val.setAttribute("x", x0 + w + 8); val.setAttribute("y", y + barH/2 + 4);
+    val.setAttribute("class", "axis-label");
+    val.textContent = fu[1].toFixed(1) + "%";
+    svg.appendChild(val);
+  });
+}
+function drawSeries() {
+  const svg = document.getElementById("series-svg");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const x0 = 40, y0 = 20, w = 440, h = 150;
+  const n = SERIES.length;
+  const step = w / (n - 1);
+  const line = (vals, yMax) => vals.map((v, i) => (x0 + i*step).toFixed(1) + "," + (y0 + h - v/yMax*h).toFixed(1)).join(" ");
+  for (let t = 0; t <= 4; t++) {
+    const y = y0 + h - t*h/4;
+    const tick = document.createElementNS(svgNS, "line");
+    tick.setAttribute("x1", x0); tick.setAttribute("x2", x0 + w);
+    tick.setAttribute("y1", y); tick.setAttribute("y2", y);
+    tick.setAttribute("class", "tick");
+    svg.appendChild(tick);
+    const lab = document.createElementNS(svgNS, "text");
+    lab.setAttribute("x", x0 - 6); lab.setAttribute("y", y + 3);
+    lab.setAttribute("text-anchor", "end"); lab.setAttribute("class", "axis-label");
+    lab.textContent = Math.round(t*100/4) + "%";
+    svg.appendChild(lab);
+  }
+  const poly = (pts, color, dash) => {
+    const p = document.createElementNS(svgNS, "polyline");
+    p.setAttribute("points", pts); p.setAttribute("fill", "none");
+    p.setAttribute("stroke", color); p.setAttribute("stroke-width", 2);
+    if (dash) p.setAttribute("stroke-dasharray", dash);
+    svg.appendChild(p);
+  };
+  poly(line(SERIES.map(s => s.wind), 35), "#155d97");
+  poly(line(SERIES.map(s => s.solar), 35), "#b8860b", "4 3");
+  const p = document.createElementNS(svgNS, "polyline");
+  p.setAttribute("points", SERIES.map((s, i) => x0 + i*step + "," + (y0 + h - s.int/260*h)).join(" "));
+  p.setAttribute("fill", "none");
+  p.setAttribute("stroke", "#a63a2e"); p.setAttribute("stroke-width", 2); p.setAttribute("stroke-opacity", .55);
+  svg.appendChild(p);
+  [["00",0],["06",6],["12",12],["18",18],["24",24]].forEach(([txt, idx]) => {
+    const i = Math.min(idx, n - 1);
+    const lab = document.createElementNS(svgNS, "text");
+    lab.setAttribute("x", x0 + i*step); lab.setAttribute("y", y0 + h + 16);
+    lab.setAttribute("text-anchor", idx === 0 ? "start" : "middle"); lab.setAttribute("class", "axis-label");
+    lab.textContent = txt + ":00";
+    svg.appendChild(lab);
+  });
+}
+drawMix();
+drawSeries();
+applyFilters();
+/* Try a live refresh from the NESO Carbon Intensity API; fall back to the snapshot. */
+(async function tryLive() {
+  const badge = document.getElementById("live-badge");
+  try {
+    const res = await fetch("https://api.carbonintensity.org.uk/generation", { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const mix = Object.fromEntries(data.data.generationmix.map(g => [g.fuel, g.perc]));
+    const ren = (mix.wind + mix.solar + mix.hydro + mix.biomass).toFixed(1);
+    document.getElementById("kpi-ren-pct").textContent = ren + "%";
+    badge.classList.add("is-live");
+    badge.textContent = "Live: NESO Carbon Intensity API, " + new Date().toLocaleTimeString("en-GB");
+  } catch (e) {
+    badge.textContent = "Snapshot: 21 November 2026, 20:30 GMT (live connection unavailable)";
+  }
+})();
+</script>
+</body>
+</html>
